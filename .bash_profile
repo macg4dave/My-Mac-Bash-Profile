@@ -2,8 +2,24 @@
 ## My Servers
 #-------------
 
+HOST_NAME=""
+ROUTER_IP=""
+
 NASUSER=()
 NAS=()
+
+LAP101USER=()
+LAP101=()
+LAP101PORT=()
+LAP101GUI=()
+
+BERRYUSER=()
+BERRY=()
+BERRYPORT=()
+
+TORRENTUSER=()
+TORRENT=()
+
 SSHUTTLEIP=()
 SSHUTTLEPORT=()
 SSHUTTLEUSER=()
@@ -18,20 +34,25 @@ export LSCOLORS=ExFxBxDxCxegedabagacad
 export PATH="/usr/local/opt/cython/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
 export PATH="/usr/local/opt/gettext/bin:$PATH"
+export PATH="/usr/local/opt/python@2/libexec/bin:$PATH"
+export PATH="/usr/local/opt/icu4c/bin:$PATH"
+export PATH="/usr/local/opt/icu4c/sbin:$PATH"
+export PATH="/usr/local/opt/icu4c/bin:$PATH"
+export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+export BASH_SILENCE_DEPRECATION_WARNING=1
 
-#--------
-## Alias
-#---------
 
-alias ls='ls -GFhla'
-alias mynas='ssh $NASUSER@$NAS'
-alias flushDNS='dscacheutil -flushcache'
 
 #----------
 ## Programs 
 #----------
 
 
+#--------------clock----------------------
+#Terminal clock,  needs figlet installed
+#----------------------------------------
+
+alias clock="while true ; printf '\e[8;6;38t' ; do tput clear; date +'%H : %M : %S' | figlet -f small ; sleep 1; done"
 
 
 #------------- macinfo ----------------------
@@ -39,7 +60,7 @@ alias flushDNS='dscacheutil -flushcache'
 #--------------------------------------------
 
 macinfo () {
-printf '\e[8;20;165t'
+
 my_user="$(whoami)"
 text_user=$my_user
 
@@ -101,6 +122,15 @@ display_center(){
 }
 
 cat /tmp/"$text_user"displayinfo/termdone | column -s "*&*" -t 
+
+terminalsize="$(head -1 /tmp/"$text_user"displayinfo/termdone | column -s "*&*" -t | wc -c)"
+
+fix_printf="'\e[8;20; $terminalsize t'"
+fixspace_printf="$(echo $fix_printf | sed 's/ //g' > /tmp/"$text_user"displayinfo/termsize)"
+cmd_printf="$(cat /tmp/"$text_user"displayinfo/termsize)"
+printf $cmd_printf
+
+
 }
 
 
@@ -153,7 +183,7 @@ extract () {
 #----------- cd -------------------------
 # List directory when cd
 #----------------------------------------
-cd() { builtin cd "$@"; ls -GFhla; }   
+cd() { builtin cd "$@"; ls -hla; }   
 
 
 
@@ -196,3 +226,92 @@ get_pid=$(ps aux | grep "sshuttle" | grep $SSHUTTLEIP | awk '{print $2}')
 try_kill=$(kill $get_pid && echo -n "Disconnected" ||  echo -n  'Could not Disconnect, Is SShuttle running?' 1>&2 ; exit 1;  )
 $try_kill
 }
+
+
+#-------- make_ssh -----------------
+# function make_ssh
+# 
+# 
+# 
+# Arguments:
+#  e.g. make_ssh dave 192.168.5.10 22 -Y 
+#
+#-----------------------------------
+
+
+
+function make_ssh() {
+
+gui_on="$4"
+ssh_user="$1"
+ssh_ip="$2"
+ssh_port="$3"
+
+ssh_cmd="ssh"
+
+get_loc="$(networksetup -getinfo Wi-Fi |  awk 'NR==4' | awk '{print $2}')"
+
+if [ "$get_loc" != "$ROUTER_IP" ]; then
+
+ssh_ip="$HOST_NAME"
+
+fi
+
+if [ -z "$gui_on" ]; then
+
+ssh_cmd="$ssh_cmd"
+
+else
+      ssh_cmd="$ssh_cmd $gui_on "
+fi
+
+ssh_cmd="$ssh_cmd $ssh_user"@"$ssh_ip"
+
+
+if [ -z "$ssh_port" ]; then
+
+ssh_cmd="$ssh_cmd"
+
+else
+      ssh_cmd="$ssh_cmd -p $ssh_port"
+fi
+
+$ssh_cmd
+
+}
+
+
+#----------
+## Programs End 
+#----------
+
+
+#--------
+## Alias
+#---------
+
+alias ls='ls -GFhla'
+alias flushDNS='dscacheutil -flushcache'
+alias jdir='wget -r -c --no-parent '
+alias jd='wget -c '
+alias checkip='curl ipinfo.io'
+
+
+#--------
+## Server Alias
+#---------
+
+alias mynas='make_ssh $NASUSER $NAS'
+alias myberry='make_ssh $BERRYUSER $BERRY $BERRYPORT $PIGUI'
+alias lintop101='make_ssh $LAP101USER $LAP101 $LAP101PORT $LAP101GUI'
+alias torrentbox='make_ssh $TORRENTUSER $TORRENT'
+
+#---------
+## X11 Window manager
+#---------
+alias startx11='exec startxfce4 --disable-wm-check'
+
+#-----------------------------------
+##END
+#-----------------------------------
+
